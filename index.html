@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reader</title>
+<meta name="description" content="Read EPUB, PDF, Kindle (MOBI/AZW3), FB2, CBZ, images and JSON.">
+<meta name="theme-color" content="#f6f3ec">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+<!-- ============ Library ============ -->
+<section id="library" class="screen">
+  <header class="bar">
+    <h1 class="brand"><img src="icons/icon.svg" alt="" width="24" height="24"> Reader</h1>
+    <div class="spacer"></div>
+    <button id="theme-quick" class="icon-btn" title="Theme" aria-label="Change theme">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+    <button id="open-btn" class="btn primary">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Open
+    </button>
+  </header>
+  <main class="library-main">
+    <div id="empty" class="empty" hidden>
+      <div class="empty-art">
+        <svg viewBox="0 0 64 64"><path d="M10 14c8-3 16-3 22 2 6-5 14-5 22-2v36c-8-3-16-3-22 2-6-5-14-5-22-2z"/><path d="M32 16v36"/></svg>
+      </div>
+      <h2>Your shelf is empty</h2>
+      <p>Open or drop a file to start reading.<br>
+        <span class="muted" id="format-list"></span></p>
+      <button class="btn primary" data-action="open">Open a file</button>
+    </div>
+    <ul id="shelf" class="shelf"></ul>
+  </main>
+  <input id="file-input" type="file" multiple hidden>
+</section>
+
+<!-- ============ Reader ============ -->
+<section id="reader" class="screen" hidden>
+  <header class="bar reader-bar">
+    <button id="back-btn" class="icon-btn" title="Library (Esc)" aria-label="Back to library">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button id="toc-btn" class="icon-btn" title="Contents" aria-label="Contents">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    </button>
+    <div class="title-wrap">
+      <div id="book-title" class="book-title"></div>
+      <div id="book-sub" class="book-sub"></div>
+    </div>
+    <button id="settings-btn" class="icon-btn" title="Display settings" aria-label="Display settings">
+      <svg viewBox="0 0 24 24"><path d="M4 19h3M4 5h3M17 19h3M17 5h3M7 5l5 14 5-14M9 13h6"/></svg>
+    </button>
+  </header>
+
+  <div id="stage" class="stage"></div>
+
+  <footer class="bar nav-bar">
+    <button id="prev-btn" class="icon-btn" title="Previous (←)" aria-label="Previous page">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <input id="progress" type="range" min="0" max="1" step="any" value="0" aria-label="Position in book">
+    <span id="progress-label" class="progress-label"></span>
+    <button id="next-btn" class="icon-btn" title="Next (→)" aria-label="Next page">
+      <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </footer>
+
+  <aside id="toc-panel" class="drawer" aria-label="Contents">
+    <div class="drawer-head">
+      <img id="toc-cover" alt="" hidden>
+      <div>
+        <div id="toc-title" class="drawer-title"></div>
+        <div id="toc-author" class="muted"></div>
+      </div>
+    </div>
+    <nav id="toc" class="toc"></nav>
+  </aside>
+
+  <div id="settings-panel" class="popover" aria-label="Display settings">
+    <div class="setting">
+      <label>Theme</label>
+      <div class="seg" data-setting="theme">
+        <button data-value="light">Light</button>
+        <button data-value="sepia">Sepia</button>
+        <button data-value="dark">Dark</button>
+      </div>
+    </div>
+    <div class="setting" data-needs="fontSize">
+      <label>Text size</label>
+      <div class="stepper">
+        <button data-step="-10" aria-label="Smaller text">A−</button>
+        <span id="font-size-val">100%</span>
+        <button data-step="10" aria-label="Larger text">A+</button>
+      </div>
+    </div>
+    <div class="setting" data-needs="flow">
+      <label>Layout</label>
+      <div class="seg" data-setting="flow">
+        <button data-value="paginated">Pages</button>
+        <button data-value="scrolled">Scroll</button>
+      </div>
+    </div>
+    <div class="setting" data-needs="fit">
+      <label>Image fit</label>
+      <div class="seg" data-setting="fit">
+        <button data-value="contain">Screen</button>
+        <button data-value="width">Width</button>
+        <button data-value="actual">100%</button>
+      </div>
+    </div>
+  </div>
+  <div id="scrim" class="scrim"></div>
+</section>
+
+<div id="drop-overlay" class="drop-overlay"><div>Drop to open</div></div>
+<div id="toast" class="toast" role="status"></div>
+</body>
+</html>
