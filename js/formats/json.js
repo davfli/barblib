@@ -274,6 +274,8 @@ export default {
       next: () => body.scrollBy({ top: body.clientHeight * 0.9 }),
       goTo: href => reveal(JSON.parse(href)),
       goToFraction: f => { body.scrollTop = f * (body.scrollHeight - body.clientHeight) },
+      goToPosition: pos => { if (raw) toggleRaw(); body.scrollTop = pos?.scroll ?? 0 },
+      samePosition: (a, b) => a && b && Math.abs((a.scroll ?? 0) - (b.scroll ?? 0)) < 24,
       applySettings(s) { root.style.setProperty('--json-scale', s.fontSize / 100) },
       destroy() { root.remove() },
     }
@@ -287,7 +289,7 @@ export default {
 function basicSession(file, root) {
   return {
     title: file.name, author: 'Invalid JSON', cover: null, toc: null, capabilities: [],
-    prev() {}, next() {}, goTo() {}, goToFraction() {}, applySettings() {},
+    prev() {}, next() {}, goTo() {}, goToFraction() {}, goToPosition() {}, applySettings() {},
     destroy() { root.remove() },
   }
 }

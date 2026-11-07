@@ -63,6 +63,8 @@ export default {
       next: () => show(index + 1),
       goTo: href => show(Number(href)),
       goToFraction: f => show(Math.round(f * (n - 1))),
+      goToPosition: pos => show(pos?.index ?? 0),
+      samePosition: (a, b) => a?.index === b?.index,
       currentHref: () => index,
       applySettings(s) {
         settings = s

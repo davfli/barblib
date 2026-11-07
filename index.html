@@ -16,29 +16,52 @@
 
 <!-- ============ Library ============ -->
 <section id="library" class="screen">
-  <header class="bar">
-    <h1 class="brand"><img src="icons/icon.svg" alt="" width="24" height="24"> Reader</h1>
+  <header class="bar lib-bar">
+    <h1 class="brand"><img src="icons/icon.svg" alt="" width="24" height="24"> <span>Reader</span></h1>
+    <label class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg>
+      <input id="lib-search" type="search" placeholder="Search library" aria-label="Search library">
+    </label>
     <div class="spacer"></div>
-    <button id="theme-quick" class="icon-btn" title="Theme" aria-label="Change theme">
+    <div id="view-toggle" class="seg mini" role="group" aria-label="View">
+      <button data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></button>
+      <button data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+    </div>
+    <button class="icon-btn" data-action="notes" title="Notes (N)" aria-label="Notes">
+      <svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 17h5"/></svg>
+    </button>
+    <button class="icon-btn" data-action="mode" aria-label="Bedtime mode">
       <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
     </button>
+    <button class="icon-btn" data-action="settings" title="Display &amp; comfort" aria-label="Display and comfort settings">
+      <svg viewBox="0 0 24 24"><path d="M4 19h3M4 5h3M17 19h3M17 5h3M7 5l5 14 5-14M9 13h6"/></svg>
+    </button>
+    <button id="new-folder-btn" class="icon-btn hide-sm" title="New folder" aria-label="New folder">
+      <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 11v5M9.5 13.5h5"/></svg>
+    </button>
     <button id="open-btn" class="btn primary">
-      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Open
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span>Add</span>
     </button>
   </header>
+  <nav id="crumbs" class="crumbs" aria-label="Folder path" hidden></nav>
   <main class="library-main">
     <div id="empty" class="empty" hidden>
       <div class="empty-art">
         <svg viewBox="0 0 64 64"><path d="M10 14c8-3 16-3 22 2 6-5 14-5 22-2v36c-8-3-16-3-22 2-6-5-14-5-22-2z"/><path d="M32 16v36"/></svg>
       </div>
       <h2>Your shelf is empty</h2>
-      <p>Open or drop a file to start reading.<br>
+      <p>Add files or a whole folder, or drop them anywhere on this window.<br>
         <span class="muted" id="format-list"></span></p>
-      <button class="btn primary" data-action="open">Open a file</button>
+      <div class="empty-actions">
+        <button class="btn primary" data-action="open">Add files</button>
+        <button class="btn" data-action="open-dir">Import a folder</button>
+      </div>
     </div>
-    <ul id="shelf" class="shelf"></ul>
+    <p id="shelf-status" class="shelf-status muted"></p>
+    <ul id="shelf" class="shelf grid"></ul>
   </main>
   <input id="file-input" type="file" multiple hidden>
+  <input id="dir-input" type="file" webkitdirectory multiple hidden>
 </section>
 
 <!-- ============ Reader ============ -->
@@ -47,14 +70,23 @@
     <button id="back-btn" class="icon-btn" title="Library (Esc)" aria-label="Back to library">
       <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <button id="toc-btn" class="icon-btn" title="Contents" aria-label="Contents">
+    <button id="toc-btn" class="icon-btn" title="Contents &amp; bookmarks (T)" aria-label="Contents and bookmarks">
       <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
     </button>
     <div class="title-wrap">
       <div id="book-title" class="book-title"></div>
       <div id="book-sub" class="book-sub"></div>
     </div>
-    <button id="settings-btn" class="icon-btn" title="Display settings" aria-label="Display settings">
+    <button id="bookmark-btn" class="icon-btn" title="Bookmark this page (B)" aria-label="Bookmark this page" aria-pressed="false">
+      <svg viewBox="0 0 24 24"><path d="M7 4h10v16l-5-4-5 4z"/></svg>
+    </button>
+    <button class="icon-btn" data-action="notes" title="Notes (N)" aria-label="Notes">
+      <svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 17h5"/></svg>
+    </button>
+    <button class="icon-btn hide-xs" data-action="mode" aria-label="Bedtime mode">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+    <button class="icon-btn" data-action="settings" title="Display &amp; comfort" aria-label="Display and comfort settings">
       <svg viewBox="0 0 24 24"><path d="M4 19h3M4 5h3M17 19h3M17 5h3M7 5l5 14 5-14M9 13h6"/></svg>
     </button>
   </header>
@@ -72,7 +104,7 @@
     </button>
   </footer>
 
-  <aside id="toc-panel" class="drawer" aria-label="Contents">
+  <aside id="toc-panel" class="drawer" aria-label="Contents and bookmarks">
     <div class="drawer-head">
       <img id="toc-cover" alt="" hidden>
       <div>
@@ -80,18 +112,52 @@
         <div id="toc-author" class="muted"></div>
       </div>
     </div>
-    <nav id="toc" class="toc"></nav>
-  </aside>
-
-  <div id="settings-panel" class="popover" aria-label="Display settings">
-    <div class="setting">
-      <label>Theme</label>
-      <div class="seg" data-setting="theme">
-        <button data-value="light">Light</button>
-        <button data-value="sepia">Sepia</button>
-        <button data-value="dark">Dark</button>
-      </div>
+    <div class="drawer-tabs seg">
+      <button data-tab="toc">Contents</button>
+      <button data-tab="bookmarks" id="tab-bookmarks">Bookmarks <span class="count"></span></button>
     </div>
+    <nav id="toc" class="toc"></nav>
+    <div id="bookmarks" class="toc" hidden></div>
+  </aside>
+</section>
+
+<!-- ============ Display & comfort (shared) ============ -->
+<div id="settings-panel" class="popover" aria-label="Display and comfort settings">
+  <div class="setting">
+    <div class="seg mode-seg" data-setting="mode">
+      <button data-value="day">☀︎ Day</button>
+      <button data-value="bedtime">☾ Bedtime</button>
+    </div>
+    <p class="hint">Theme, warmth and dimming are saved separately for <b id="profile-name">Day</b>.</p>
+  </div>
+  <div class="setting">
+    <label>Theme</label>
+    <div class="seg" data-setting="theme">
+      <button data-value="light">Light</button>
+      <button data-value="sepia">Sepia</button>
+      <button data-value="dark">Dark</button>
+      <button data-value="night" title="Dim amber text on black: least light, least blue">Night</button>
+    </div>
+  </div>
+  <div class="setting">
+    <label for="warmth">Warm light <span id="warmth-val" class="val"></span></label>
+    <input id="warmth" type="range" min="0" max="100" step="5" class="warm-range">
+    <p class="hint">Filters out blue light, like Night Light. Use it before bed.</p>
+  </div>
+  <div class="setting">
+    <label for="dim">Dim <span id="dim-val" class="val"></span></label>
+    <input id="dim" type="range" min="0" max="80" step="5">
+    <p class="hint">Goes darker than your screen's lowest brightness.</p>
+  </div>
+  <div class="setting">
+    <label class="check"><input id="sched-on" type="checkbox"> Bedtime automatically</label>
+    <div id="sched-times" class="sched-times">
+      <input id="sched-from" type="time" aria-label="Bedtime starts"> <span>to</span>
+      <input id="sched-to" type="time" aria-label="Bedtime ends">
+    </div>
+  </div>
+
+  <div id="text-section" class="section">
     <div class="setting" data-needs="fontSize">
       <label>Text size</label>
       <div class="stepper">
@@ -99,6 +165,30 @@
         <span id="font-size-val">100%</span>
         <button data-step="10" aria-label="Larger text">A+</button>
       </div>
+    </div>
+    <div class="setting" data-needs="typography">
+      <label>Font</label>
+      <div class="seg" data-setting="font">
+        <button data-value="publisher" title="The book's own fonts">Book</button>
+        <button data-value="serif" style="font-family:Georgia,serif">Serif</button>
+        <button data-value="sans">Sans</button>
+        <button data-value="clear" style="font-family:Verdana,sans-serif" title="Wide, very legible letters">Clear</button>
+      </div>
+    </div>
+    <div class="setting" data-needs="typography">
+      <label for="line-height">Line spacing <span id="line-height-val" class="val"></span></label>
+      <input id="line-height" type="range" min="1.1" max="2.4" step="0.1">
+    </div>
+    <div class="setting" data-needs="typography">
+      <label>Line width</label>
+      <div class="seg" data-setting="width">
+        <button data-value="narrow">Narrow</button>
+        <button data-value="normal">Normal</button>
+        <button data-value="wide">Wide</button>
+      </div>
+    </div>
+    <div class="setting" data-needs="typography">
+      <label class="check"><input id="justify" type="checkbox"> Justify text</label>
     </div>
     <div class="setting" data-needs="flow">
       <label>Layout</label>
@@ -116,10 +206,19 @@
       </div>
     </div>
   </div>
-  <div id="scrim" class="scrim"></div>
-</section>
 
-<div id="drop-overlay" class="drop-overlay"><div>Drop to open</div></div>
+  <div class="setting row-actions">
+    <label class="check" id="wake-row"><input id="wake-lock" type="checkbox"> Keep screen on while reading</label>
+    <button id="fullscreen-btn" class="btn small">Fullscreen (F)</button>
+  </div>
+</div>
+<div id="scrim" class="scrim"></div>
+
+<!-- comfort filters: sit above everything, never catch clicks -->
+<div id="warm-filter" class="filter warm"></div>
+<div id="dim-filter" class="filter dim"></div>
+
+<div id="drop-overlay" class="drop-overlay"><div>Drop files or folders to import</div></div>
 <div id="toast" class="toast" role="status"></div>
 </body>
 </html>

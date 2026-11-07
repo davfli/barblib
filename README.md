@@ -25,14 +25,29 @@ from Explorer via *Open with → Reader*.
 A phone needs the app served over HTTPS, for example from GitHub Pages or Netlify.
 Upload this folder without `samples/`, open the URL on the phone, then use "Add to Home Screen".
 
-## Features (MVP)
+## Features
 
-- Library shelf with covers, author, progress; books are stored in the browser's local database (IndexedDB)
-- Remembers your position per book
-- Contents panel, progress slider, keyboard (← → PgUp PgDn Space, `t` = contents, Esc = back)
+**Library**
+- Folders you can nest, rename, delete; breadcrumbs; grid or list view; search
+- Drag books and folders onto folders or breadcrumbs to move them (on phones: ⋯ → Move to…)
+- Import files or a whole folder (keeps its sub-folders); drop files/folders anywhere on the window
+- Images in the same folder become one paged set (scans, comics)
+
+**Reading**
+- Remembers your position per book; contents, progress slider
+- Bookmarks (B or the ribbon button), listed with chapter, position and a short preview
+- Floating notes window (N): drag anywhere, resize, collapse; *This book* and *General* notebooks;
+  insert your current location or quote selected text
+- Keyboard: ← → PgUp PgDn Space, `T` contents, `B` bookmark, `N` notes, `F` fullscreen, Esc back
 - Tap zones: left/right third turns pages, middle hides the bars
-- Light / sepia / dark themes (dark mode also inverts PDFs), text size, pages or scroll layout
-- Drag & drop, multi-file open, works offline once loaded
+
+**Comfort**
+- Day and Bedtime profiles, each with its own theme, warm light and dimming; switch with the moon button
+  or automatically on a schedule
+- Themes: Light, Sepia, Dark, Night (dim amber on black); dark themes also apply to PDFs
+- Warm light filter (cuts blue light) and extra dimming below the screen's minimum brightness
+- Fonts (Book / Serif / Sans / Clear), text size, line spacing, line width, justify, pages or scroll
+- Keep the screen on while reading
 
 ## Adding a format
 
@@ -46,7 +61,12 @@ That's it. The library, settings, contents and progress UI work automatically.
 
 ```
 index.html, css/app.css      UI shell
-js/app.js                    screens, controls, opening files
+js/app.js                    startup, settings panel, global keys and drops
+js/shelf.js                  library: folders, import, drag & drop
+js/reader.js                 reader screen, bookmarks, contents
+js/notes.js                  floating notes window
+js/settings.js               display/comfort settings, bedtime schedule, filters
+js/ui.js                     icons, dialogs, menus, toast
 js/library.js                IndexedDB storage
 js/formats/*.js              one file per format
 vendor/foliate-js            ebook engine (MIT), includes pdf.js (Apache-2.0)

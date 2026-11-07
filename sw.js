@@ -1,9 +1,10 @@
 // Offline support. Network-first so updates show up immediately when online;
 // falls back to the cache when offline. Books themselves live in IndexedDB.
-const CACHE = 'reader-v1'
+const CACHE = 'reader-v2'
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icons/icon.svg',
-  'js/app.js', 'js/util.js', 'js/library.js',
+  'js/app.js', 'js/util.js', 'js/library.js', 'js/settings.js', 'js/ui.js',
+  'js/shelf.js', 'js/reader.js', 'js/notes.js',
   'js/formats/index.js', 'js/formats/ebook.js', 'js/formats/image.js', 'js/formats/json.js',
 ]
 
