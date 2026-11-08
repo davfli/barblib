@@ -24,6 +24,12 @@ export const ICONS = {
   minus: 'M5 12h14',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
   expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  cloud: 'M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z',
+  download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+  cloudOff: 'M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5zM4 4l16 16',
+  sync: 'M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9M18 3v4h-4M6 21v-4h4',
+  check: 'M5 12l5 5L20 7',
+  alert: 'M12 8v5M12 16h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
 }
 
 export function icon(name) {

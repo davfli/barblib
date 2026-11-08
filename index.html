@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Reader</title>
-<meta name="description" content="Read EPUB, PDF, Kindle (MOBI/AZW3), FB2, CBZ, images and JSON.">
+<title>barbLib</title>
+<meta name="description" content="barbLib: your ebook library for EPUB, PDF, Kindle, FB2, CBZ, images and JSON, synced through your Google Drive.">
 <meta name="theme-color" content="#f6f3ec">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -17,7 +17,7 @@
 <!-- ============ Library ============ -->
 <section id="library" class="screen">
   <header class="bar lib-bar">
-    <h1 class="brand"><img src="icons/icon.svg" alt="" width="24" height="24"> <span>Reader</span></h1>
+    <h1 class="brand"><img src="icons/icon.svg" alt="" width="24" height="24"> <span>barbLib</span></h1>
     <label class="search">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg>
       <input id="lib-search" type="search" placeholder="Search library" aria-label="Search library">
@@ -27,6 +27,10 @@
       <button data-view="grid" title="Grid" aria-label="Grid view"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></button>
       <button data-view="list" title="List" aria-label="List view"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
     </div>
+    <button id="cloud-chip" class="icon-btn cloud-chip" data-phase="off" title="Cloud sync is off" aria-label="Cloud sync status">
+      <svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z"/></svg>
+      <span class="cloud-dot"></span>
+    </button>
     <button class="icon-btn" data-action="notes" title="Notes (N)" aria-label="Notes">
       <svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 17h5"/></svg>
     </button>
@@ -211,6 +215,32 @@
     <label class="check" id="wake-row"><input id="wake-lock" type="checkbox"> Keep screen on while reading</label>
     <button id="fullscreen-btn" class="btn small">Fullscreen (F)</button>
   </div>
+
+  <div class="section" id="cloud-section">
+    <div class="setting">
+      <label>Cloud library · Google Drive</label>
+      <p id="cloud-status" class="cloud-status"></p>
+      <div id="cloud-setup" class="cloud-setup" hidden>
+        <p class="hint">Paste the client ID from your Google setup (see the setup guide):</p>
+        <input id="client-id" type="text" placeholder="…apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+        <button id="client-id-save" class="btn small">Save</button>
+      </div>
+      <div class="cloud-actions">
+        <button id="cloud-connect" class="btn small primary">Connect Google Drive</button>
+        <button id="cloud-sync" class="btn small">Sync now</button>
+        <button id="cloud-disconnect" class="btn small">Disconnect</button>
+      </div>
+    </div>
+  </div>
+  <div class="about">
+    <span>barbLib <b id="app-version"></b></span>
+    <button id="check-update" class="btn small">Check for updates</button>
+  </div>
+</div>
+<div id="update-bar" class="update-bar" hidden>
+  <span>A new version of barbLib is ready <b id="update-version"></b></span>
+  <button id="update-now" class="btn small primary">Update now</button>
+  <button id="update-later" class="icon-btn sm" aria-label="Later"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 <div id="scrim" class="scrim"></div>
 

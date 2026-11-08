@@ -6,6 +6,8 @@ import * as S from './settings.js'
 import * as notes from './notes.js'
 import { el } from './util.js'
 import { icon, toast } from './ui.js'
+import * as sync from './cloud/sync.js'
+import * as drive from './cloud/drive.js'
 
 const $ = s => document.querySelector(s)
 
@@ -17,9 +19,8 @@ export const session = () => current?.session
 
 // ---------------- open / close ----------------
 export async function openBook(id) {
-  const book = await lib.getBook(id)
-  const files = await lib.getFiles(id)
-  if (!book || !files) { toast('That book is no longer in the library'); onClosed(); return }
+  let book = await lib.getBook(id)
+  if (!book) { toast('That book is no longer in the library'); onClosed(); return }
   const handler = getHandler(book.handler)
 
   if (current) closeReader({ silent: true })
@@ -27,7 +28,8 @@ export async function openBook(id) {
   if (history.state?.screen !== 'reader') history.pushState({ screen: 'reader' }, '')
 
   const stage = $('#stage')
-  stage.replaceChildren(el('div', { class: 'loading' }, 'Opening…'))
+  const loading = el('div', { class: 'loading' }, 'Opening…')
+  stage.replaceChildren(loading)
   $('#book-title').textContent = book.title
   $('#book-sub').textContent = ''
   $('#progress-label').textContent = ''
@@ -36,6 +38,17 @@ export async function openBook(id) {
   const state = { id, handler, session: null, saveTimer: null, info: null, bookmarks: book.bookmarks ?? [] }
   current = state
   try {
+    if (book.local === false) {
+      // stored in the cloud only: download it first (this click may renew sign-in)
+      if (!drive.hasToken()) await sync.reconnect()
+      await sync.ensureLocal(id, p => { loading.textContent = `Downloading from Google Drive… ${Math.round(p * 100)}%` })
+      book = await lib.getBook(id)
+      dispatchEvent(new CustomEvent('library-synced'))
+    }
+    const files = await lib.getFiles(id)
+    if (!files) throw new Error('The file is missing on this device')
+    if (current !== state) return
+    loading.textContent = 'Opening…'
     const session = await handler.open(files, {
       container: stage,
       settings: S.effective(),
@@ -61,9 +74,10 @@ export async function openBook(id) {
     })
     if (book.needsMeta) {
       const cover = await lib.makeThumbnail(session.cover)
-      await lib.updateBook(id, { title: session.title, author: session.author || '', cover, needsMeta: false })
+      await lib.touchBook(id, { needsMeta: false })
+      await lib.updateBook(id, { title: session.title, author: session.author || '', cover })
     }
-    await lib.updateBook(id, { openedAt: Date.now() })
+    await lib.touchBook(id, { openedAt: Date.now() })
   } catch (err) {
     console.error(err)
     toast(`Couldn't open this file: ${err.message || err}`, 5000)
@@ -84,7 +98,7 @@ export function closeReader({ silent = false } = {}) {
   $('#reader').classList.remove('immersive')
   $('#stage').replaceChildren()
   $('#stage').className = 'stage'
-  document.title = 'Reader'
+  document.title = 'barbLib'
   if (!silent) { showScreen('library'); onClosed() }
 }
 

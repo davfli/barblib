@@ -3,6 +3,8 @@ import * as lib from './library.js'
 import { detect, getHandler } from './formats/index.js'
 import { el } from './util.js'
 import { icon, toast, promptDialog, confirmDialog, pickFolderDialog, showMenu } from './ui.js'
+import * as sync from './cloud/sync.js'
+import * as drive from './cloud/drive.js'
 
 const $ = s => document.querySelector(s)
 const DRAG_TYPE = 'application/x-reader-item'
@@ -151,10 +153,13 @@ async function moveTo(kind, id, dest) {
 }
 
 async function removeBook(b) {
+  const inCloud = !!b.files?.length
   const ok = await confirmDialog({
-    title: `Remove "${b.title}"?`,
-    message: 'It is removed from this app, with its bookmarks and notes. The original file on your device is not touched.',
-    okLabel: 'Remove', danger: true,
+    title: `${inCloud ? 'Delete' : 'Remove'} "${b.title}"?`,
+    message: inCloud
+      ? 'It is removed from barbLib on all your devices, with its bookmarks and notes. The cloud copy goes to your Google Drive trash (recoverable for 30 days).'
+      : 'It is removed from this app, with its bookmarks and notes. The original file on your device is not touched.',
+    okLabel: inCloud ? 'Delete everywhere' : 'Remove', danger: true,
   })
   if (!ok) return
   await lib.removeBook(b.id)
@@ -179,10 +184,28 @@ async function renameFolder(f) {
   renderShelf()
 }
 
+async function downloadBook(b) {
+  try {
+    if (!drive.hasToken()) await sync.reconnect()
+    await sync.ensureLocal(b.id, p => toast(`Downloading ${b.title}… ${Math.round(p * 100)}%`, 60_000))
+    toast(`${b.title} is now available offline`)
+    renderShelf()
+  } catch (e) { toast(`Download failed: ${e.message}`) }
+}
+
+async function removeDownload(b) {
+  await lib.removeDownload(b.id)
+  toast('Removed from this device. It stays in your cloud library.')
+  renderShelf()
+}
+
 const bookMenu = b => [
   { label: 'Open', icon: 'open', onclick: () => openBook(b.id) },
   { label: 'Move to…', icon: 'move', onclick: () => moveItem('book', b.id) },
-  { label: 'Remove', icon: 'trash', danger: true, onclick: () => removeBook(b) },
+  ...(b.local === false
+    ? [{ label: 'Download to this device', icon: 'download', onclick: () => downloadBook(b) }]
+    : b.files?.length ? [{ label: 'Remove download (keep in cloud)', icon: 'cloudOff', onclick: () => removeDownload(b) }] : []),
+  { label: b.files?.length ? 'Delete everywhere' : 'Remove', icon: 'trash', danger: true, onclick: () => removeBook(b) },
 ]
 const folderMenu = f => [
   { label: 'Open', icon: 'folder', onclick: () => enter(f.id) },
@@ -241,6 +264,7 @@ function coverEl(b, small = false) {
       small ? null : el('div', { class: 'ph-title' }, b.title), el('div'))
   }
   if (!small) node.append(el('span', { class: 'fmt' }, b.fmt))
+  if (b.local === false) node.append(el('span', { class: 'cloud-badge', title: 'In the cloud: downloads when you open it' }, icon('cloud')))
   return node
 }
 
@@ -351,6 +375,7 @@ export async function renderShelf() {
 // ---------------- setup ----------------
 export function initShelf({ onOpenBook }) {
   openBook = onOpenBook
+  addEventListener('library-synced', () => { if (!$('#library').hidden) renderShelf() })
   const fileInput = $('#file-input')
   const dirInput = $('#dir-input')
   fileInput.onchange = () => { importFiles(fileInput.files).catch(e => toast(e.message)); fileInput.value = '' }

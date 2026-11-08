@@ -53,6 +53,11 @@ export function initNotes() {
   addEventListener('resize', () => place())
 
   if (ui.open) setOpen(true)
+
+  // another device changed notes: refresh unless you're typing
+  addEventListener('library-synced', () => {
+    if (!panel.hidden && !saveTimer && document.activeElement !== textarea) load()
+  })
 }
 
 // ---------------- open / close / collapse ----------------
@@ -149,7 +154,7 @@ async function load() {
   updateTabs()
   const key = activeKey()
   const text = key === 'general'
-    ? (await lib.getKV('notes.general')) ?? ''
+    ? (await lib.getGeneralNotes()).text
     : (await lib.getBook(key))?.notes ?? ''
   loadedKey = key
   textarea.value = text
@@ -161,7 +166,7 @@ async function save() {
   const key = loadedKey
   if (!key) return
   try {
-    if (key === 'general') await lib.setKV('notes.general', textarea.value)
+    if (key === 'general') await lib.setGeneralNotes(textarea.value)
     else await lib.updateBook(key, { notes: textarea.value })
     status.textContent = 'Saved'
   } catch (e) { status.textContent = 'Not saved!'; toast(`Couldn't save notes: ${e.message}`) }

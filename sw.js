@@ -1,10 +1,11 @@
 // Offline support. Network-first so updates show up immediately when online;
 // falls back to the cache when offline. Books themselves live in IndexedDB.
-const CACHE = 'reader-v2'
+const CACHE = 'barblib-1.0.0'
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icons/icon.svg',
   'js/app.js', 'js/util.js', 'js/library.js', 'js/settings.js', 'js/ui.js',
-  'js/shelf.js', 'js/reader.js', 'js/notes.js',
+  'js/shelf.js', 'js/reader.js', 'js/notes.js', 'js/version.js', 'js/config.js',
+  'js/cloud/drive.js', 'js/cloud/sync.js', 'js/cloud/merge.js',
   'js/formats/index.js', 'js/formats/ebook.js', 'js/formats/image.js', 'js/formats/json.js',
 ]
 
@@ -22,7 +23,7 @@ self.addEventListener('fetch', e => {
   const { request } = e
   const url = new URL(request.url)
   if (request.method !== 'GET' || url.origin !== location.origin) return
-  if (url.pathname.includes('/samples/')) return
+  if (url.pathname.includes('/samples/') || url.pathname.endsWith('/version.json')) return
   e.respondWith((async () => {
     try {
       // 'no-cache' = revalidate with the server (cheap 304s) so updates are never stale
