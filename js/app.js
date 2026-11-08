@@ -209,23 +209,33 @@ async function applyUpdate() {
   setTimeout(() => location.reload(), 5000) // in case the switch event never arrives
 }
 
+/**
+ * A downloaded release that IS this page's version takes over right away and the
+ * page reloads once, so page, code and cache all come from that one set. (Happens
+ * when moving off an older offline cache that served this page from the network.)
+ */
+function takeOver(worker) {
+  let reloaded = false
+  try { reloaded = sessionStorage.getItem('barblib.tookOver') === VERSION } catch { /* ignore */ }
+  if (!reloaded && !reader.isOpen()) {
+    try { sessionStorage.setItem('barblib.tookOver', VERSION) } catch { /* ignore */ }
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true })
+  }
+  worker.postMessage('skipWaiting')
+}
+
 async function settleWorkers() {
   const reg = await swReg()
   if (!reg) return
-  // a downloaded release that matches this page can take over silently
-  // (e.g. after the very first install, or when the page itself is already new)
-  if (reg.waiting) {
-    const v = await workerVersion(reg.waiting)
-    if (v === `barblib-${VERSION}`) reg.waiting.postMessage('skipWaiting')
+  const handle = async w => {
+    if (!w || !navigator.serviceWorker.controller) return
+    const v = await workerVersion(w)
+    if (v === `barblib-${VERSION}`) takeOver(w)
     else if (v) offer(v.replace('barblib-', ''))
   }
-  reg.addEventListener('updatefound', async () => {
-    const w = await installed(reg)
-    if (w && navigator.serviceWorker.controller) {
-      const v = await workerVersion(w)
-      if (v && v !== `barblib-${VERSION}`) offer(v.replace('barblib-', ''))
-    }
-  })
+  if (reg.waiting) await handle(reg.waiting)
+  else if (reg.installing) installed(reg).then(handle)
+  reg.addEventListener('updatefound', async () => handle(await installed(reg)))
 }
 
 function bindUpdates() {
