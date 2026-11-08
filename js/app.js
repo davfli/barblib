@@ -99,7 +99,8 @@ function renderCloud(status = sync.getStatus(), state = sync.getState()) {
   // make the next step obvious: a labelled button until connected / when sign-in expired
   const label = status.phase === 'off' && configured ? 'Connect' : status.phase === 'auth' ? 'Reconnect' : ''
   chip.classList.toggle('labeled', !!label)
-  chip.querySelector('.chip-label').textContent = label
+  const chipLabel = chip.querySelector('.chip-label')
+  if (chipLabel) chipLabel.textContent = label
   if (label === 'Connect') chip.title = 'Connect Google Drive to sync your library between devices'
   // cloud first in settings until connected
   const panel = $('#settings-panel'), section = $('#cloud-section')
@@ -145,16 +146,51 @@ function bindCloud() {
 }
 
 // ---------------- updates ----------------
+// Each release is cached as one complete set by the service worker (sw.js).
+// A new release installs in the background and waits; "Update now" lets it take
+// over and reloads. Without a click it takes over on the next launch.
 let offered = null
+const swReg = () => navigator.serviceWorker?.getRegistration() ?? Promise.resolve(null)
+
+/** Which release a (waiting) service worker holds, e.g. "barblib-1.0.4". */
+function workerVersion(worker) {
+  return new Promise(resolve => {
+    const ch = new MessageChannel()
+    ch.port1.onmessage = e => resolve(e.data)
+    worker.postMessage('version', [ch.port2])
+    setTimeout(() => resolve(null), 2000)
+  })
+}
+
+/** Wait until a newly found worker has finished downloading its release. */
+function installed(reg, ms = 60_000) {
+  return new Promise(resolve => {
+    if (reg.waiting) return resolve(reg.waiting)
+    const w = reg.installing
+    if (!w) return resolve(null)
+    const done = () => resolve(w.state === 'installed' ? w : reg.waiting ?? null)
+    w.addEventListener('statechange', () => { if (w.state !== 'installing') done() })
+    setTimeout(done, ms)
+  })
+}
+
+function offer(version) {
+  if (offered === version) return
+  offered = version
+  $('#update-version').textContent = version
+  $('#update-bar').hidden = false
+}
+
 async function checkForUpdate({ manual = false } = {}) {
   try {
     const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' })
     const { version } = await res.json()
     if (version && version !== VERSION) {
-      if (offered === version && !manual) return
-      offered = version
-      $('#update-version').textContent = version
-      $('#update-bar').hidden = false
+      if (manual) offered = null
+      // start downloading it right away so "Update now" is instant
+      const reg = await swReg()
+      reg?.update().catch(() => {})
+      offer(version)
     } else if (manual) toast(`barbLib ${VERSION} is the latest version`)
   } catch { if (manual) toast("Couldn't check for updates (offline?)") }
 }
@@ -162,9 +198,34 @@ async function checkForUpdate({ manual = false } = {}) {
 async function applyUpdate() {
   $('#update-bar').hidden = true
   if (reader.isOpen()) reader.closeReader()          // saves your position first
-  const reg = await navigator.serviceWorker?.getRegistration()
-  await reg?.update().catch(() => {})
-  location.reload()
+  toast('Updating barbLib…', 20_000)
+  const reg = await swReg()
+  if (!reg) return location.reload()
+  await reg.update().catch(() => {})
+  const waiting = await installed(reg)
+  if (!waiting) return location.reload()
+  navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true })
+  waiting.postMessage('skipWaiting')
+  setTimeout(() => location.reload(), 5000) // in case the switch event never arrives
+}
+
+async function settleWorkers() {
+  const reg = await swReg()
+  if (!reg) return
+  // a downloaded release that matches this page can take over silently
+  // (e.g. after the very first install, or when the page itself is already new)
+  if (reg.waiting) {
+    const v = await workerVersion(reg.waiting)
+    if (v === `barblib-${VERSION}`) reg.waiting.postMessage('skipWaiting')
+    else if (v) offer(v.replace('barblib-', ''))
+  }
+  reg.addEventListener('updatefound', async () => {
+    const w = await installed(reg)
+    if (w && navigator.serviceWorker.controller) {
+      const v = await workerVersion(w)
+      if (v && v !== `barblib-${VERSION}`) offer(v.replace('barblib-', ''))
+    }
+  })
 }
 
 function bindUpdates() {
@@ -251,7 +312,7 @@ async function start() {
 
   navigator.storage?.persist?.().catch(() => {})
   if ('serviceWorker' in navigator && location.protocol !== 'file:')
-    navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW registration failed', e))
+    navigator.serviceWorker.register('sw.js').then(settleWorkers).catch(e => console.warn('SW registration failed', e))
 }
 
 globalThis.readerApp = { handlers, settings: S.settings, shelf, reader, sync, version: VERSION }
