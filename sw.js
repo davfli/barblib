@@ -7,7 +7,7 @@
 // hasn't answered within 3 seconds (bad signal) the cached copy is used and the
 // network answer still refreshes the cache in the background.
 // Books themselves live in IndexedDB, not here.
-const CACHE = 'barblib-1.0.1'
+const CACHE = 'barblib-1.0.2'
 const TIMEOUT_MS = 3000
 const FALLBACK_SHELL = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'js/app.js']
 
