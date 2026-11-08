@@ -96,6 +96,15 @@ function renderCloud(status = sync.getStatus(), state = sync.getState()) {
     error: `Sync problem: ${status.detail}. Tap to retry`,
   }
   chip.title = titles[status.phase] ?? ''
+  // make the next step obvious: a labelled button until connected / when sign-in expired
+  const label = status.phase === 'off' && configured ? 'Connect' : status.phase === 'auth' ? 'Reconnect' : ''
+  chip.classList.toggle('labeled', !!label)
+  chip.querySelector('.chip-label').textContent = label
+  if (label === 'Connect') chip.title = 'Connect Google Drive to sync your library between devices'
+  // cloud first in settings until connected
+  const panel = $('#settings-panel'), section = $('#cloud-section')
+  if (!connected && panel.firstElementChild !== section) panel.prepend(section)
+  else if (connected && panel.firstElementChild === section) panel.querySelector('.about').before(section)
 
   $('#cloud-setup').hidden = configured
   $('#cloud-connect').hidden = !configured || connected
@@ -113,7 +122,8 @@ function bindCloud() {
   const run = p => p.catch(e => toast(e.message, 5000))
   $('#cloud-chip').onclick = () => {
     const { phase } = sync.getStatus()
-    if (phase === 'off') { syncPanel(); reader.togglePanel('#settings-panel'); $('#cloud-section').scrollIntoView({ block: 'nearest' }) }
+    if (phase === 'off' && drive.isConfigured()) run(sync.connect().then(() => toast('Connected. Your library is syncing.')))
+    else if (phase === 'off') { syncPanel(); reader.togglePanel('#settings-panel'); $('#cloud-section').scrollIntoView({ block: 'nearest' }) }
     else if (phase === 'auth') run(sync.reconnect())
     else run(sync.syncNow())
   }

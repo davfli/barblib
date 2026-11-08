@@ -436,6 +436,15 @@ header.bar { padding-top: max(8px, env(safe-area-inset-top)); }
 
 /* ================= barbLib: cloud + updates ================= */
 .cloud-chip { position: relative; }
+.cloud-chip .chip-label { display: none; }
+.cloud-chip.labeled { width: auto; padding: 0 12px 0 9px; gap: 6px; display: inline-flex; align-items: center;
+  color: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; height: 34px; font-weight: 650; font-size: 13px; }
+.cloud-chip.labeled .chip-label { display: inline; }
+.cloud-chip.labeled .cloud-dot { display: none; }
+@media (max-width: 420px) {
+  .cloud-chip.labeled { width: 40px; padding: 0; justify-content: center; border-width: 2px; }
+  .cloud-chip.labeled .chip-label { display: none; }
+}
 .cloud-chip .cloud-dot { position: absolute; right: 7px; bottom: 8px; width: 8px; height: 8px; border-radius: 50%;
   background: transparent; box-shadow: 0 0 0 2px var(--surface); }
 .cloud-chip[data-phase="off"] { color: var(--muted); }
@@ -461,3 +470,5 @@ header.bar { padding-top: max(8px, env(safe-area-inset-top)); }
   background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px;
   max-width: calc(100vw - 24px); }
 .update-bar[hidden] { display: none; }
+#settings-panel > .section:first-child { border-top: 0; padding-top: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.cloud-chip.labeled[data-phase] { color: var(--accent); border-color: var(--accent); }

@@ -21,7 +21,7 @@ automatically**. When a new version is out, barbLib shows *"A new version is rea
 ## Cloud library
 
 One-time setup: [docs/google-drive-setup.md](docs/google-drive-setup.md). Then each
-device: ⚙ → **Cloud library** → **Connect Google Drive**.
+device: tap **☁ Connect** in the library bar.
 
 - Books are stored as normal files in *My Drive → barbLib → books*; `library.json`
   holds positions, bookmarks, notes, folders.

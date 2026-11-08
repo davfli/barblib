@@ -29,6 +29,7 @@
     </div>
     <button id="cloud-chip" class="icon-btn cloud-chip" data-phase="off" title="Cloud sync is off" aria-label="Cloud sync status">
       <svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z"/></svg>
+      <span class="chip-label"></span>
       <span class="cloud-dot"></span>
     </button>
     <button class="icon-btn" data-action="notes" title="Notes (N)" aria-label="Notes">
@@ -37,8 +38,8 @@
     <button class="icon-btn" data-action="mode" aria-label="Bedtime mode">
       <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
     </button>
-    <button class="icon-btn" data-action="settings" title="Display &amp; comfort" aria-label="Display and comfort settings">
-      <svg viewBox="0 0 24 24"><path d="M4 19h3M4 5h3M17 19h3M17 5h3M7 5l5 14 5-14M9 13h6"/></svg>
+    <button class="icon-btn" data-action="settings" title="Settings: display, comfort, cloud" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
     <button id="new-folder-btn" class="icon-btn hide-sm" title="New folder" aria-label="New folder">
       <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 11v5M9.5 13.5h5"/></svg>
@@ -90,8 +91,8 @@
     <button class="icon-btn hide-xs" data-action="mode" aria-label="Bedtime mode">
       <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
     </button>
-    <button class="icon-btn" data-action="settings" title="Display &amp; comfort" aria-label="Display and comfort settings">
-      <svg viewBox="0 0 24 24"><path d="M4 19h3M4 5h3M17 19h3M17 5h3M7 5l5 14 5-14M9 13h6"/></svg>
+    <button class="icon-btn" data-action="settings" title="Settings: display, comfort, cloud" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
   </header>
 
@@ -126,7 +127,7 @@
 </section>
 
 <!-- ============ Display & comfort (shared) ============ -->
-<div id="settings-panel" class="popover" aria-label="Display and comfort settings">
+<div id="settings-panel" class="popover" aria-label="Settings">
   <div class="setting">
     <div class="seg mode-seg" data-setting="mode">
       <button data-value="day">☀︎ Day</button>

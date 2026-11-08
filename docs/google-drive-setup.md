@@ -59,9 +59,9 @@ shown; barbLib doesn't use it.)
 Either:
 
 - **Send it to Claude** and it gets built into barbLib for every device (recommended), or
-- paste it on each device: barbLib → ⚙ settings → **Cloud library** → paste → **Save**.
+- paste it on each device: barbLib → ⚙ (gear) → **Cloud library** → paste → **Save**.
 
-Then tap **Connect Google Drive**, choose your barbLib account, and allow access.
+Then tap **☁ Connect** in the library bar (or ⚙ → **Connect Google Drive**), choose your barbLib account, and allow access.
 "Google hasn't verified this app" may appear because the app is in testing mode:
 click **Continue**. It's your own app.
 
