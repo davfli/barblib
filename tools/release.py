@@ -35,4 +35,8 @@ else:
 VERSION_JS.write_text(re.sub(r"VERSION = '[\d.]+'", f"VERSION = '{new}'", VERSION_JS.read_text(encoding='utf8')), encoding='utf8')
 VERSION_JSON.write_text(json.dumps({'version': new}) + '\n', encoding='utf8')
 SW.write_text(re.sub(r"const CACHE = '[^']+'", f"const CACHE = 'barblib-{new}'", SW.read_text(encoding='utf8')), encoding='utf8')
-print(f'barbLib {current} -> {new}')
+
+sys.path.insert(0, str(ROOT / 'tools'))
+import precache  # noqa: E402  (refresh the offline file list)
+files = precache.build()
+print(f'barbLib {current} -> {new}  ({len(files)} files cached for offline use)')
