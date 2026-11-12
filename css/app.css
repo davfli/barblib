@@ -472,3 +472,9 @@ header.bar { padding-top: max(8px, env(safe-area-inset-top)); }
 .update-bar[hidden] { display: none; }
 #settings-panel > .section:first-child { border-top: 0; padding-top: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
 .cloud-chip.labeled[data-phase] { color: var(--accent); border-color: var(--accent); }
+
+/* notes in their own window (pop-out / always on top) */
+body.notes-window { margin: 0; overflow: hidden; background: var(--surface); }
+.notes.external { position: fixed; inset: 0; width: auto !important; height: auto !important; max-width: none; max-height: none;
+  border: 0; border-radius: 0; box-shadow: none; resize: none; left: 0 !important; top: 0 !important; }
+.notes.external .notes-head { cursor: default; }

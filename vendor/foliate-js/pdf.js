@@ -123,6 +123,10 @@ export const makePDF = async file => {
         range: transport,
         cMapUrl: pdfjsPath('cmaps/'),
         standardFontDataUrl: pdfjsPath('standard_fonts/'),
+        // barbLib: decoders for JBIG2 / JPEG 2000 scans and colour profiles
+        // (without them scanned books render as blank pages)
+        wasmUrl: pdfjsPath('wasm/'),
+        iccUrl: pdfjsPath('iccs/'),
         isEvalSupported: false,
     }).promise
 

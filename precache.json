@@ -43,6 +43,7 @@
  "vendor/foliate-js/uri-template.js",
  "vendor/foliate-js/vendor/fflate.js",
  "vendor/foliate-js/vendor/pdfjs/annotation_layer_builder.css",
+ "vendor/foliate-js/vendor/pdfjs/iccs/CGATS001Compat-v2-micro.icc",
  "vendor/foliate-js/vendor/pdfjs/pdf.mjs",
  "vendor/foliate-js/vendor/pdfjs/pdf.worker.mjs",
  "vendor/foliate-js/vendor/pdfjs/standard_fonts/FoxitDingbats.pfb",
@@ -60,6 +61,10 @@
  "vendor/foliate-js/vendor/pdfjs/standard_fonts/LiberationSans-Italic.ttf",
  "vendor/foliate-js/vendor/pdfjs/standard_fonts/LiberationSans-Regular.ttf",
  "vendor/foliate-js/vendor/pdfjs/text_layer_builder.css",
+ "vendor/foliate-js/vendor/pdfjs/wasm/jbig2.wasm",
+ "vendor/foliate-js/vendor/pdfjs/wasm/openjpeg.wasm",
+ "vendor/foliate-js/vendor/pdfjs/wasm/openjpeg_nowasm_fallback.js",
+ "vendor/foliate-js/vendor/pdfjs/wasm/qcms_bg.wasm",
  "vendor/foliate-js/vendor/zip.js",
  "vendor/foliate-js/view.js"
 ]

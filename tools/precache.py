@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EXT = {'.html', '.css', '.js', '.mjs', '.json', '.webmanifest', '.svg', '.png', '.pfb', '.ttf'}
+EXT = {'.html', '.css', '.js', '.mjs', '.json', '.webmanifest', '.svg', '.png', '.pfb', '.ttf', '.wasm', '.icc'}
 SKIP_DIRS = {'samples', 'packages', 'tests', 'tools', 'docs', '.git', 'cmaps'}
 SKIP_FILES = {'version.json', 'precache.json', 'package.json', 'sw.js'}
 

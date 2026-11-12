@@ -1,2 +1,2 @@
 // Bumped by tools/release.py — don't edit by hand.
-export const VERSION = '1.0.5'
+export const VERSION = '1.0.6'

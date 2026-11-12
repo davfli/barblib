@@ -3,7 +3,8 @@
 // book) and "General" (always available, also from the library).
 import * as lib from './library.js'
 import { el } from './util.js'
-import { icon, toast } from './ui.js'
+import { icon, toast, showMenu } from './ui.js'
+import * as S from './settings.js'
 
 const UI_KEY = 'reader.notesUI'
 let ui = { open: false, collapsed: false, x: null, y: null, w: 340, h: 300, tab: 'book' }
@@ -14,6 +15,8 @@ let panel, textarea, tabBook, tabGeneral, status, bookActions
 let book = null          // { id, title, getContext(): { label, chapter, selection } }
 let loadedKey = null     // which notebook the textarea shows: 'general' | book id
 let saveTimer = null
+let ext = null           // { win, kind: 'pip' | 'window' } while notes live in their own window
+let head, popBtn, dockBtn, collapseBtn
 
 export function initNotes() {
   textarea = el('textarea', { class: 'notes-text', placeholder: 'Write anything…', spellcheck: 'true',
@@ -26,10 +29,15 @@ export function initNotes() {
       icon('pin'), 'Location'),
     el('button', { class: 'chip', title: 'Insert the text you selected in the book', onclick: insertQuote },
       icon('quote'), 'Quote selection'))
-  const head = el('div', { class: 'notes-head' },
+  popBtn = el('button', { class: 'icon-btn sm hide-sm', title: 'Pop out of barbLib (also: right-click)', 'aria-label': 'Pop out notes',
+    onclick: e => showMenu(popMenu(), e.currentTarget) }, icon('popout'))
+  dockBtn = el('button', { class: 'icon-btn sm', title: 'Put back into barbLib', 'aria-label': 'Put notes back into barbLib',
+    hidden: true, onclick: () => dock() }, icon('dock'))
+  collapseBtn = el('button', { class: 'icon-btn sm', title: 'Collapse', 'aria-label': 'Collapse notes', onclick: toggleCollapse }, icon('minus'))
+  head = el('div', { class: 'notes-head' },
     el('span', { class: 'notes-grip', 'aria-hidden': 'true' }, icon('notes')),
     tabBook, tabGeneral, el('div', { class: 'spacer' }),
-    el('button', { class: 'icon-btn sm', title: 'Collapse', 'aria-label': 'Collapse notes', onclick: toggleCollapse }, icon('minus')),
+    popBtn, dockBtn, collapseBtn,
     el('button', { class: 'icon-btn sm', title: 'Close (N)', 'aria-label': 'Close notes', onclick: () => setOpen(false) }, icon('close')))
   panel = el('section', { class: 'notes', 'aria-label': 'Notes', hidden: true },
     head,
@@ -45,8 +53,16 @@ export function initNotes() {
   textarea.addEventListener('blur', () => { if (saveTimer) { clearTimeout(saveTimer); save() } })
 
   enableDrag(head)
+  // right-click anywhere on the notes window except the text: pop-out menu
+  panel.addEventListener('contextmenu', e => {
+    if (ext || e.target === textarea || innerWidth < 600) return
+    e.preventDefault()
+    showMenu(popMenu(), { x: e.clientX, y: e.clientY })
+  })
+  S.onChange(syncExternalTheme)
+  addEventListener('pagehide', () => ext?.win.close())
   new ResizeObserver(() => {
-    if (panel.hidden || ui.collapsed || innerWidth < 600) return
+    if (ext || panel.hidden || ui.collapsed || innerWidth < 600) return
     const r = panel.getBoundingClientRect()
     if (r.width && r.height) { ui.w = Math.round(r.width); ui.h = Math.round(r.height); saveUI() }
   }).observe(panel)
@@ -64,6 +80,7 @@ export function initNotes() {
 export function toggleNotes() { setOpen(panel.hidden) }
 
 export function setOpen(open) {
+  if (!open && ext) dock()
   ui.open = open
   saveUI()
   panel.hidden = !open
@@ -90,7 +107,7 @@ function applyCollapse() {
 
 // keep the panel on screen; default position = bottom right
 function place() {
-  if (!panel || panel.hidden) return
+  if (!panel || panel.hidden || ext) return
   if (innerWidth < 600) { panel.style.left = ''; panel.style.top = ''; panel.classList.add('sheet'); return }
   panel.classList.remove('sheet')
   const r = panel.getBoundingClientRect()
@@ -103,7 +120,7 @@ function place() {
 function enableDrag(handle) {
   let start = null
   handle.addEventListener('pointerdown', e => {
-    if (e.target.closest('button') || innerWidth < 600) return
+    if (e.target.closest('button') || innerWidth < 600 || ext) return
     const r = panel.getBoundingClientRect()
     start = { dx: e.clientX - r.left, dy: e.clientY - r.top }
     handle.setPointerCapture(e.pointerId)
@@ -121,11 +138,89 @@ function enableDrag(handle) {
   handle.addEventListener('dblclick', e => { if (!e.target.closest('button')) toggleCollapse() })
 }
 
+// ---------------- own window / always on top ----------------
+const pipSupported = () => 'documentPictureInPicture' in window
+
+function popMenu() {
+  return [
+    ...(pipSupported() ? [{ label: 'Float on top of everything', icon: 'pip', onclick: () => popOut('pip') }] : []),
+    { label: 'Open in its own window (split screen)', icon: 'popout', onclick: () => popOut('window') },
+    { label: ui.collapsed ? 'Expand' : 'Collapse', icon: 'minus', onclick: toggleCollapse },
+    { label: 'Close notes', icon: 'close', onclick: () => setOpen(false) },
+  ]
+}
+
+/**
+ * Moves the notes into their own window. 'pip' = small window that stays on top
+ * even when barbLib is minimised (Edge/Chrome desktop); 'window' = normal window
+ * you can snap next to barbLib (Win + left/right). Typing, saving and "Quote
+ * selection" keep working; closing that window puts the notes back.
+ */
+export async function popOut(kind) {
+  if (ext) dock()
+  const w = Math.max(320, ui.w), h = Math.max(260, ui.h)
+  let win
+  try {
+    // open the window first: browsers only allow it right after a click
+    if (kind === 'pip') win = await documentPictureInPicture.requestWindow({ width: w, height: h })
+    else {
+      win = window.open('', 'barblib-notes', `popup,width=${w + 20},height=${h + 40}`)
+      if (!win) { toast('The window was blocked. Allow pop-ups for barbLib and try again.'); return }
+      win.document.open()
+      win.document.write('<!doctype html><html><head><meta charset="utf-8"><title>barbLib notes</title></head><body></body></html>')
+      win.document.close()
+    }
+  } catch (e) { toast(`Couldn't pop out: ${e.message}`); return }
+
+  if (panel.hidden) setOpen(true)
+  if (ui.collapsed) { ui.collapsed = false; saveUI(); applyCollapse() }
+  const d = win.document
+  for (const link of document.querySelectorAll('link[rel=stylesheet]'))
+    d.head.append(Object.assign(d.createElement('link'), { rel: 'stylesheet', href: link.href }))
+  d.head.append(Object.assign(d.createElement('meta'), { name: 'color-scheme', content: 'light dark' }))
+  d.body.classList.add('notes-window')
+  ext = { win, kind }
+  syncExternalTheme()
+  d.title = book ? `Notes - ${book.title}` : 'barbLib notes'
+  panel.classList.add('external')
+  panel.classList.remove('sheet', 'dragging')
+  d.body.append(panel)
+  popBtn.hidden = true
+  dockBtn.hidden = false
+  collapseBtn.hidden = true
+  win.addEventListener('pagehide', () => { if (ext?.win === win) dock() })
+  textarea.focus({ preventScroll: true })
+}
+
+/** Puts the notes back into barbLib's window. */
+export function dock() {
+  if (!ext) return
+  const { win } = ext
+  ext = null
+  if (saveTimer) { clearTimeout(saveTimer); save() }
+  panel.classList.remove('external')
+  document.body.append(panel)
+  popBtn.hidden = false
+  dockBtn.hidden = true
+  collapseBtn.hidden = false
+  applyCollapse()
+  place()
+  try { if (!win.closed) win.close() } catch { /* already gone */ }
+}
+
+function syncExternalTheme() {
+  if (!ext) return
+  const d = ext.win.document
+  d.documentElement.dataset.theme = document.documentElement.dataset.theme
+  d.documentElement.dataset.mode = document.documentElement.dataset.mode
+}
+
 // ---------------- which notebook ----------------
 /** Called by the reader when a book opens (ctx) or closes (null). */
 export async function setBook(ctx) {
   if (saveTimer) { clearTimeout(saveTimer); await save() }
   book = ctx
+  if (ext) ext.win.document.title = book ? `Notes - ${book.title}` : 'barbLib notes'
   if (!panel.hidden) await load()
   else updateTabs()
 }

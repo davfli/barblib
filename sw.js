@@ -10,7 +10,7 @@
 //
 // On localhost (development) files always come from the network.
 // Books themselves live in IndexedDB, not here.
-const CACHE = 'barblib-1.0.5'
+const CACHE = 'barblib-1.0.6'
 const DEV = ['localhost', '127.0.0.1'].includes(location.hostname)
 const FALLBACK_SHELL = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'js/app.js']
 
