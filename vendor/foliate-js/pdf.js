@@ -12,21 +12,78 @@ const textLayerBuilderCSS = await fetchText(pdfjsPath('text_layer_builder.css'))
 // https://raw.githubusercontent.com/mozilla/pdf.js/refs/tags/v5.5.207/web/annotation_layer_builder.css
 const annotationLayerBuilderCSS = await fetchText(pdfjsPath('annotation_layer_builder.css'))
 
-const render = async (page, doc, zoom) => {
+// the canvas must be in the `PDFDocument`'s `ownerDocument`
+// (`globalThis.document` by default); that's where the fonts are loaded
+const paint = async (page, scale) => {
+    const viewport = page.getViewport({ scale })
+    const canvas = document.createElement('canvas')
+    canvas.height = viewport.height
+    canvas.width = viewport.width
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+    return canvas
+}
+
+// barbLib: draw the pages around the current one in the background, so turning
+// a page shows a finished page instead of decoding and drawing it on the spot
+// (scanned books take ~0.5 s per page). Only pages near the reader are kept.
+const whenIdle = () => new Promise(resolve =>
+    globalThis.requestIdleCallback ? requestIdleCallback(resolve, { timeout: 250 }) : setTimeout(resolve, 30))
+
+const createPrerenderer = pdf => {
+    const jobs = new Map()    // "page@scale" -> Promise<canvas> (started)
+    let queue = []            // [page, scale] waiting to start
+    let running = false
+    let closed = false
+    const key = (n, scale) => `${n}@${scale.toFixed(4)}`
+    const pump = async () => {
+        running = true
+        while (queue.length && !closed) {
+            const [n, scale] = queue.shift()
+            const k = key(n, scale)
+            if (jobs.has(k)) continue
+            await whenIdle()
+            if (closed) break
+            const job = pdf.getPage(n).then(page => paint(page, scale))
+            jobs.set(k, job)
+            await job.catch(() => jobs.delete(k))
+        }
+        running = false
+    }
+    return {
+        /** A started (or finished) background render of this page, if any. */
+        take(n, scale) {
+            const k = key(n, scale)
+            const job = jobs.get(k)
+            if (job) jobs.delete(k)
+            queue = queue.filter(([m, s]) => key(m, s) !== k)
+            return job ?? null
+        },
+        /** After showing page n: prepare the next pages (and the previous one). */
+        around(n, scale) {
+            for (const k of [...jobs.keys()]) {
+                const m = Number(k.split('@')[0])
+                if (m < n - 2 || m > n + 5 || !k.endsWith(`@${scale.toFixed(4)}`)) jobs.delete(k)
+            }
+            queue = [n + 1, n + 2, n + 3, n - 1]
+                .filter(m => m >= 1 && m <= pdf.numPages && !jobs.has(key(m, scale)))
+                .map(m => [m, scale])
+            if (!running) pump()
+        },
+        close() { closed = true; queue = []; jobs.clear() },
+    }
+}
+
+const render = async (page, doc, zoom, prerender) => {
     const scale = zoom * devicePixelRatio
     doc.documentElement.style.transform = `scale(${1 / devicePixelRatio})`
     doc.documentElement.style.transformOrigin = 'top left'
     doc.documentElement.style.setProperty('--scale-factor', scale)
     const viewport = page.getViewport({ scale })
 
-    // the canvas must be in the `PDFDocument`'s `ownerDocument`
-    // (`globalThis.document` by default); that's where the fonts are loaded
-    const canvas = document.createElement('canvas')
-    canvas.height = viewport.height
-    canvas.width = viewport.width
-    const canvasContext = canvas.getContext('2d')
-    await page.render({ canvasContext, viewport }).promise
+    const ready = prerender?.take(page.pageNumber, scale)
+    const canvas = (ready && await ready.catch(() => null)) ?? await paint(page, scale)
     doc.querySelector('#canvas').replaceChildren(doc.adoptNode(canvas))
+    prerender?.around(page.pageNumber, scale)
 
     const container = doc.querySelector('.textLayer')
     const textLayer = new pdfjsLib.TextLayer({
@@ -66,7 +123,7 @@ const render = async (page, doc, zoom) => {
         .render({ annotations: await page.getAnnotations() })
 }
 
-const renderPage = async (page, getImageBlob) => {
+const renderPage = async (page, getImageBlob, prerender) => {
     const viewport = page.getViewport({ scale: 1 })
     if (getImageBlob) {
         const canvas = document.createElement('canvas')
@@ -102,7 +159,7 @@ const renderPage = async (page, getImageBlob) => {
         <div class="textLayer"></div>
         <div class="annotationLayer"></div>
     `], { type: 'text/html' }))
-    const onZoom = ({ doc, scale }) => render(page, doc, scale)
+    const onZoom = ({ doc, scale }) => render(page, doc, scale, prerender)
     return { src, onZoom }
 }
 
@@ -151,12 +208,13 @@ export const makePDF = async file => {
     book.toc = outline?.map(makeTOCItem)
 
     const cache = new Map()
+    const prerender = createPrerenderer(pdf)
     book.sections = Array.from({ length: pdf.numPages }).map((_, i) => ({
         id: i,
         load: async () => {
             const cached = cache.get(i)
             if (cached) return cached
-            const url = await renderPage(await pdf.getPage(i + 1))
+            const url = await renderPage(await pdf.getPage(i + 1), false, prerender)
             cache.set(i, url)
             return url
         },
@@ -179,6 +237,6 @@ export const makePDF = async file => {
     }
     book.getTOCFragment = doc => doc.documentElement
     book.getCover = async () => renderPage(await pdf.getPage(1), true)
-    book.destroy = () => pdf.destroy()
+    book.destroy = () => { prerender.close(); pdf.destroy() }
     return book
 }

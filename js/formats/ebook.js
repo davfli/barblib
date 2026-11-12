@@ -113,12 +113,15 @@ export default {
       },
       destroy() {
         view.close?.()
+        try { book.destroy?.() } catch { /* already closed */ } // stops PDF background rendering
         view.remove()
         container.classList.remove(...filterClasses)
       },
     }
 
-    try { session.cover = await book.getCover?.() ?? null } catch { /* no cover */ }
+    // the cover is only needed the first time (library thumbnail): fetch it lazily,
+    // because for PDFs it means rendering page 1 (~0.5 s for scans)
+    session.getCover = async () => { try { return await book.getCover?.() ?? null } catch { return null } }
 
     const total = book.sections?.length ?? 0
     view.addEventListener('relocate', ({ detail }) => {

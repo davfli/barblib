@@ -60,7 +60,7 @@ export async function openBook(id) {
     stage.querySelector(':scope > .loading')?.remove()
     $('#book-title').textContent = session.title
     document.title = session.title
-    buildToc(session)
+    buildToc(session, book.cover)
     renderBookmarks()
     updateBookmarkButton()
     document.dispatchEvent(new CustomEvent('reader-session'))
@@ -73,9 +73,12 @@ export async function openBook(id) {
       }),
     })
     if (book.needsMeta) {
-      const cover = await lib.makeThumbnail(session.cover)
+      // first open only: extract the cover (for PDFs this renders page 1) after the
+      // book is already on screen, so it never delays reading
+      const cover = await lib.makeThumbnail(session.cover ?? await session.getCover?.().catch(() => null))
       await lib.touchBook(id, { needsMeta: false })
       await lib.updateBook(id, { title: session.title, author: session.author || '', cover })
+      if (current === state) setTocCover(cover)
     }
     await lib.touchBook(id, { openedAt: Date.now() })
   } catch (err) {
@@ -182,13 +185,23 @@ function renderBookmarks() {
 }
 
 // ---------------- contents ----------------
-function buildToc(session) {
+let tocCoverUrl = null
+function setTocCover(blob) {
+  const img = $('#toc-cover')
+  if (tocCoverUrl) URL.revokeObjectURL(tocCoverUrl)
+  tocCoverUrl = null
+  if (blob instanceof Blob && !/svg/.test(blob.type)) {
+    tocCoverUrl = URL.createObjectURL(blob)
+    img.src = tocCoverUrl
+    img.hidden = false
+  } else img.hidden = true
+}
+
+function buildToc(session, savedCover) {
   $('#toc-title').textContent = session.title
   $('#toc-author').textContent = session.author || ''
-  const img = $('#toc-cover')
-  if (session.cover instanceof Blob && !/svg/.test(session.cover.type)) {
-    img.src = URL.createObjectURL(session.cover); img.hidden = false
-  } else img.hidden = true
+  // the library already keeps a small cover thumbnail: no need to extract it again
+  setTocCover(savedCover ?? session.cover)
 
   const build = items => el('ul', {}, items.map(item => el('li', {},
     el('button', { dataset: { href: String(item.href) }, onclick: () => {

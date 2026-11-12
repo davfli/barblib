@@ -73,6 +73,8 @@ safe and private: it is needed to publish newer APKs over the old one.
 ## Run locally
 
 Double-click **`Start barbLib.cmd`** (needs Python) → <http://localhost:8642>.
+It runs `tools/serve.py`, a dev server that disables browser caching so edits show on reload.
+On `localhost` the service worker always uses the network too.
 `http://localhost:8642/?open=samples/test.pdf` opens a file from this folder.
 
 ## Adding a format
@@ -97,7 +99,9 @@ js/cloud/merge.js            merge rules (pure, tested)
 js/config.js                 Google client ID
 js/version.js, version.json  version (bumped by tools/release.py)
 js/formats/*.js              one file per format
-vendor/foliate-js            ebook engine (MIT), includes pdf.js (Apache-2.0)
+vendor/foliate-js            ebook engine (MIT), includes pdf.js (Apache-2.0) with its JBIG2/JPEG 2000
+                             decoders; barbLib changes in pdf.js: decoder paths, background
+                             pre-rendering of nearby pages (marked "barbLib:")
 sw.js, manifest.webmanifest  offline + install
 tests/fake-drive.js          in-memory Drive for testing sync
 docs/                        setup guides
