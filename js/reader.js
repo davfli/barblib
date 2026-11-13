@@ -69,8 +69,10 @@ export async function openBook(id) {
       id, title: session.title,
       getContext: () => ({
         label: state.info?.label, chapter: state.info?.chapter,
+        position: state.info?.position ?? null,
         selection: session.getSelectionText?.() ?? '',
       }),
+      goTo: position => session.goToPosition?.(position),
     })
     if (book.needsMeta) {
       // first open only: extract the cover (for PDFs this renders page 1) after the
@@ -280,6 +282,8 @@ export function initReader({ onClose }) {
     switch (e.key) {
       case 'ArrowLeft': case 'PageUp': current.session.prev(); break
       case 'ArrowRight': case 'PageDown': case ' ': current.session.next(); break
+      case 'ArrowDown': (current.session.lineScroll ?? (d => current.session.next()))(1); break
+      case 'ArrowUp': (current.session.lineScroll ?? (d => current.session.prev()))(-1); break
       case 'Escape':
         if (document.querySelector('.drawer.show, .popover.show')) closePanels()
         else $('#back-btn').click()

@@ -62,7 +62,7 @@ export async function silently(fn) { quiet++; try { return await fn() } finally 
 const STAMP = {
   title: 'metaAt', author: 'metaAt', folderId: 'metaAt', cover: 'metaAt',
   position: 'positionAt', progress: 'positionAt',
-  bookmarks: 'bookmarksAt', notes: 'notesAt',
+  bookmarks: 'bookmarksAt', notes: 'notesAt', noteLinks: 'notesAt',
 }
 const stamp = (changes, now = Date.now()) => {
   const s = {}

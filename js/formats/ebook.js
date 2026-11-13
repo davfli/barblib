@@ -19,6 +19,52 @@ const FONTS = {
 
 const WIDTHS = { narrow: '520px', normal: '720px', wide: '1100px' }
 
+const NAV_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', ' '])
+
+/**
+ * Scroll mode: the engine shows one chapter at a time, so the mouse wheel / a
+ * swipe used to stop dead at a chapter's end. Keep pushing past the end (or the
+ * start) and the next (previous) chapter loads. A small push is needed first so
+ * you don't skip chapters by accident.
+ */
+function createOverscroll(view) {
+  const PUSH = 220          // px of extra wheel/swipe needed at an edge
+  let pushed = 0, dirSeen = 0, resetTimer, busy = false, touchY = null
+  const r = () => view.renderer
+  const atEnd = () => r().viewSize - r().end <= 2
+  const atStart = () => r().start <= 1
+  const go = async dir => {
+    if (busy) return
+    busy = true
+    pushed = 0
+    try { await (dir > 0 ? view.next() : view.prev()) } finally { setTimeout(() => { busy = false }, 400) }
+  }
+  const feed = dy => {
+    if (!r()?.scrolled || busy || !dy) return
+    const dir = Math.sign(dy)
+    const atEdge = dir > 0 ? atEnd() : atStart()
+    if (!atEdge || dir !== dirSeen) { pushed = 0; dirSeen = dir; if (!atEdge) return }
+    pushed += Math.abs(dy)
+    clearTimeout(resetTimer)
+    resetTimer = setTimeout(() => { pushed = 0 }, 600)
+    if (pushed >= PUSH) go(dir)
+  }
+  return {
+    watch(target) {
+      target.addEventListener('wheel', e => feed(e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY), { passive: true })
+      target.addEventListener('touchstart', e => { touchY = e.touches[0]?.clientY ?? null }, { passive: true })
+      target.addEventListener('touchend', e => {
+        if (touchY == null || !r()?.scrolled) return
+        const dy = touchY - (e.changedTouches[0]?.clientY ?? touchY)
+        touchY = null
+        if (Math.abs(dy) < 80) return
+        const dir = Math.sign(dy)
+        if (dir > 0 ? atEnd() : atStart()) go(dir)
+      }, { passive: true })
+    },
+  }
+}
+
 const bookCSS = ({ theme, fontSize, font, lineHeight, justify }) => {
   const p = PALETTES[theme] ?? PALETTES.light
   const family = FONTS[font]
@@ -69,6 +115,8 @@ export default {
 
     const { book } = view
     const fixed = view.isFixedLayout
+    const overscroll = createOverscroll(view)
+    overscroll.watch(view)
     const isPDF = /\.pdf$/i.test(file.name) || book.metadata?.format === 'pdf'
 
     // load errors inside books (missing images etc.) shouldn't kill the reader
@@ -88,6 +136,14 @@ export default {
       next: () => view.next(),
       goTo: href => view.goTo(href).catch(e => console.warn(e)),
       goToFraction: f => view.goToFraction(f),
+      // Up/Down keys: a few lines in scroll mode (continuing into the next/previous
+      // chapter at the ends), a page in page mode
+      lineScroll(dir) {
+        const r = view.renderer
+        if (!r.scrolled) return dir > 0 ? view.next() : view.prev()
+        const step = Math.max(60, r.size * 0.15)
+        return dir > 0 ? view.next(step) : view.prev(step)
+      },
       async goToPosition(pos) {
         if (pos?.cfi) { try { await view.goTo(pos.cfi); return } catch { /* fall back */ } }
         if (pos?.fraction != null) await view.goToFraction(pos.fraction)
@@ -139,8 +195,11 @@ export default {
 
     // keyboard + tap zones inside the book's iframes
     view.addEventListener('load', ({ detail: { doc } }) => {
-      doc.addEventListener('keydown', e => container.dispatchEvent(
-        new KeyboardEvent('keydown', { key: e.key, bubbles: true })))
+      doc.addEventListener('keydown', e => {
+        if (NAV_KEYS.has(e.key) && !e.target.closest?.('input, textarea, select, [contenteditable]')) e.preventDefault()
+        container.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true }))
+      })
+      overscroll.watch(doc)
       doc.addEventListener('click', e => {
         if (e.defaultPrevented || e.target.closest?.('a')) return
         if (!doc.getSelection()?.isCollapsed) return

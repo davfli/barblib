@@ -60,6 +60,11 @@ export default {
       capabilities: ['fit'],
       toc: n > 1 ? files.map((f, i) => ({ label: f.name, href: i })) : null,
       prev: () => show(index - 1),
+      lineScroll(dir) {
+        const scrollable = view.scrollHeight > view.clientHeight + 2
+        if (scrollable) view.scrollBy({ top: dir * 120 })
+        else show(index + dir)
+      },
       next: () => show(index + 1),
       goTo: href => show(Number(href)),
       goToFraction: f => show(Math.round(f * (n - 1))),

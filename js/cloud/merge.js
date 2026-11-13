@@ -19,7 +19,7 @@ export const BOOK_GROUPS = {
   metaAt: ['title', 'author', 'fmt', 'handler', 'size', 'addedAt', 'folderId'],
   positionAt: ['position', 'progress'],
   bookmarksAt: ['bookmarks'],
-  notesAt: ['notes'],
+  notesAt: ['notes', 'noteLinks'],
 }
 export const SYNC_FIELDS = ['id', 'files', 'coverId',
   ...Object.entries(BOOK_GROUPS).flatMap(([k, v]) => [k, ...v])]

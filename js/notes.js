@@ -11,7 +11,7 @@ let ui = { open: false, collapsed: false, x: null, y: null, w: 340, h: 300, tab:
 try { ui = { ...ui, ...JSON.parse(localStorage.getItem(UI_KEY) || '{}') } } catch { /* ignore */ }
 const saveUI = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)) } catch { /* ignore */ } }
 
-let panel, textarea, tabBook, tabGeneral, status, bookActions
+let panel, textarea, tabBook, tabGeneral, status, bookActions, linkBar
 let book = null          // { id, title, getContext(): { label, chapter, selection } }
 let loadedKey = null     // which notebook the textarea shows: 'general' | book id
 let saveTimer = null
@@ -41,11 +41,22 @@ export function initNotes() {
     el('button', { class: 'icon-btn sm', title: 'Close (N)', 'aria-label': 'Close notes', onclick: () => setOpen(false) }, icon('close')))
   panel = el('section', { class: 'notes', 'aria-label': 'Notes', hidden: true },
     head,
-    el('div', { class: 'notes-body' }, textarea, el('div', { class: 'notes-foot' }, bookActions, status)))
+    el('div', { class: 'notes-body' }, textarea,
+      linkBar = el('div', { class: 'notes-links', hidden: true, 'aria-label': 'Jump to a place in the book' }),
+      el('div', { class: 'notes-foot' }, bookActions, status)))
   document.body.append(panel)
 
+  // Ctrl/Cmd+click on a 📍 line jumps to that place in the book
+  textarea.addEventListener('click', e => {
+    if (!(e.ctrlKey || e.metaKey) || textarea.selectionStart !== textarea.selectionEnd) return
+    const v = textarea.value, i = textarea.selectionStart
+    const line = v.slice(v.lastIndexOf('\n', i - 1) + 1, (v.indexOf('\n', i) + 1 || v.length + 1) - 1)
+    const m = line.match(LINK_RE_ONE)
+    if (m) { e.preventDefault(); jump(m[1]) }
+  })
   textarea.addEventListener('input', () => {
     status.textContent = 'Editing…'
+    renderLinks()
     clearTimeout(saveTimer)
     saveTimer = setTimeout(save, 500)
   })
@@ -242,6 +253,7 @@ function updateTabs() {
   tabBook.classList.toggle('on', key !== 'general')
   tabGeneral.classList.toggle('on', key === 'general')
   bookActions.hidden = key === 'general'
+  if (key === 'general') linkBar.hidden = true
   textarea.placeholder = key === 'general' ? 'General notes: anything, any time…' : `Notes for ${book.title}…`
 }
 
@@ -253,6 +265,7 @@ async function load() {
     : (await lib.getBook(key))?.notes ?? ''
   loadedKey = key
   textarea.value = text
+  renderLinks()
   status.textContent = ''
 }
 
@@ -265,6 +278,39 @@ async function save() {
     else await lib.updateBook(key, { notes: textarea.value })
     status.textContent = 'Saved'
   } catch (e) { status.textContent = 'Not saved!'; toast(`Couldn't save notes: ${e.message}`) }
+}
+
+// ---------------- links to places in the book ----------------
+// A note marker looks like  📍[k3f9] Chapter 5 · 21%  - the code points to an
+// exact position stored with the book (noteLinks), so it survives edits and syncs.
+const LINK_RE = /📍\[([a-z0-9]{3,10})\]\s*([^\n]*)/g
+const LINK_RE_ONE = /📍\[([a-z0-9]{3,10})\]/
+
+async function createLink() {
+  const c = book?.getContext?.() ?? {}
+  if (!c.position) return null
+  const id = Math.random().toString(36).slice(2, 6)
+  const rec = await lib.getBook(book.id)
+  await lib.updateBook(book.id, { noteLinks: { ...rec?.noteLinks, [id]: { position: c.position, label: where() } } })
+  return id
+}
+
+async function jump(id) {
+  if (!book?.goTo) return
+  const link = (await lib.getBook(book.id))?.noteLinks?.[id]
+  if (!link) { toast('That place is not known on this device yet'); return }
+  await book.goTo(link.position)
+  if (ext?.kind !== 'pip') toast(`Jumped to ${link.label || 'your note'}`, 1500)
+}
+
+function renderLinks() {
+  if (!linkBar) return
+  const onBook = loadedKey && loadedKey !== 'general' && book
+  const found = onBook ? [...textarea.value.matchAll(LINK_RE)] : []
+  linkBar.hidden = !found.length
+  linkBar.replaceChildren(...found.map(([, id, label]) => el('button', {
+    class: 'link-chip', title: 'Jump to this place', onclick: () => jump(id),
+  }, icon('pin'), (label || 'Place').trim().slice(0, 40))))
 }
 
 // ---------------- inserting ----------------
@@ -282,13 +328,15 @@ function where() {
   return [c.chapter, c.label].filter(Boolean).join(' · ')
 }
 
-function insertLocation() {
+async function insertLocation() {
   if (!book) return
-  insertAtCursor(`📍 ${where() || 'here'}`)
+  const id = await createLink()
+  insertAtCursor(id ? `📍[${id}] ${where() || 'here'}` : `📍 ${where() || 'here'}`)
 }
 
-function insertQuote() {
+async function insertQuote() {
   const sel = book?.getContext?.().selection?.trim()
   if (!sel) { toast('Select some text in the book first'); return }
-  insertAtCursor(`> ${sel.replace(/\s+/g, ' ')}\n  — ${where()}`)
+  const id = await createLink()
+  insertAtCursor(`> ${sel.replace(/\s+/g, ' ')}\n  — ${id ? `📍[${id}] ` : ''}${where()}`)
 }

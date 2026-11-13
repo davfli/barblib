@@ -271,6 +271,7 @@ export default {
       toc: topLevel,
       capabilities: ['fontSize'],
       prev: () => body.scrollBy({ top: -body.clientHeight * 0.9 }),
+      lineScroll: dir => body.scrollBy({ top: dir * 80 }),
       next: () => body.scrollBy({ top: body.clientHeight * 0.9 }),
       goTo: href => reveal(JSON.parse(href)),
       goToFraction: f => { body.scrollTop = f * (body.scrollHeight - body.clientHeight) },
